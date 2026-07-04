@@ -53,3 +53,26 @@ class ToggleResponse(BaseModel):
 class UsageHistoryResponse(BaseModel):
     device_id: str
     records: List[UsageRead]
+
+
+class DeviceUsageToday(BaseModel):
+    """kWh and cost accrued today for a single device."""
+
+    device_id: str
+    name: str
+    pin: int
+    room_number: str
+    is_running: bool
+    kwh_today: float
+    cost_today: float
+    open_session_started_at: Optional[datetime] = None
+
+
+class UsageTodaySummary(BaseModel):
+    """Aggregate of all devices' usage since 00:00 UTC today."""
+
+    generated_at: datetime
+    kwh_today: float
+    cost_today: float
+    total_current_watts: float
+    devices: List[DeviceUsageToday]
