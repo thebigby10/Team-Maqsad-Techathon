@@ -51,7 +51,7 @@ Append-only log of on/off sessions.
 |---|---|---|
 | `GET` | `/health` | Liveness probe → `{"status":"ok"}` |
 | `POST` | `/entry` | Register a device, returns UUID |
-| `GET` | `/toggle/{ID}` | Flip on/off state, open/close usage session |
+| `POST` | `/toggle/{ID}` | Flip on/off state, open/close usage session |
 | `GET` | `/devices` | List all devices |
 | `GET` | `/usage/{ID}` | Usage history for a device |
 

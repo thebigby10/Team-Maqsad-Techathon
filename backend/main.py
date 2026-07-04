@@ -127,7 +127,7 @@ def create_device(
     return EntryResponse(id=device.id, status="created", device=_device_to_read(device))
 
 
-@app.get("/toggle/{identifier}", response_model=ToggleResponse)
+@app.post("/toggle/{identifier}", response_model=ToggleResponse)
 def toggle_device(
     identifier: str,
     session: Session = Depends(get_session),
