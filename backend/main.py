@@ -5,6 +5,7 @@ from typing import Optional
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 
 from config import RATE_PER_KWH
@@ -20,6 +21,18 @@ from schemas import (
 )
 
 app = FastAPI(title="Device Power Tracker", version="1.0.0")
+
+# CORS: open by default so any frontend (Next.js, plain HTML, etc.) can
+# hit the API during development. Lock down to specific origins before
+# deploying to a shared network. The ESP32 makes server-to-server calls
+# and isn't affected by CORS.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,  # must be False when allow_origins is ["*"]
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")

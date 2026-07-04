@@ -103,7 +103,7 @@ Or hit the OpenAPI docs at `http://localhost:8000/docs` for an interactive playg
 ## Known limitations / out of scope
 
 - **No auth** — anyone on the network can toggle any device.
-- **No CORS configured** — a frontend on a different origin will be blocked; needs `CORSMiddleware` added in `main.py`.
+- **CORS is open** — `CORSMiddleware` is configured with `allow_origins=["*"]` so any frontend can hit the API during development. Before deploying to a shared network, replace this with an explicit allowlist (e.g. `["https://your-dashboard.example.com"]`). The ESP32 makes server-to-server calls and is unaffected by CORS.
 - **Single running session per device** — toggle logic assumes there's at most one open `usage` row per device. Toggling while already in a weird state (e.g. flag desyncs from the `usage` table) could leave gaps.
 - **No migrations** — schema changes (like the recent `room_number`/`last_usage_datetime` addition) require deleting `IOT.db` for the new columns to take effect.
 - **Rate constant is hardcoded** at $0.15/kWh in `config.py`. To make it per-device, add a column to `Device` and read it in `_compute_cost()`.
