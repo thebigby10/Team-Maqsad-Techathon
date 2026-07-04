@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "author": "Techathon Architecture",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 0,
+      "left": -50,
+      "attrs": {}
+    },
+
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw1",
+      "top": -100,
+      "left": -150,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw2",
+      "top": -50,
+      "left": -150,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw3",
+      "top": 0,
+      "left": -150,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw4",
+      "top": 50,
+      "left": -150,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw5",
+      "top": 100,
+      "left": -150,
+      "attrs": {}
+    },
+
+    {
+      "type": "wokwi-led",
+      "id": "light1",
+      "top": -100,
+      "left": 150,
+      "attrs": { "color": "yellow", "label": "Light 1" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "light2",
+      "top": -50,
+      "left": 150,
+      "attrs": { "color": "yellow", "label": "Light 2" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "light3",
+      "top": 0,
+      "left": 150,
+      "attrs": { "color": "yellow", "label": "Light 3" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "fan1",
+      "top": 50,
+      "left": 150,
+      "attrs": { "color": "blue", "label": "Fan 1" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "fan2",
+      "top": 100,
+      "left": 150,
+      "attrs": { "color": "blue", "label": "Fan 2" }
+    },
+
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": -60,
+      "left": 150,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": -10,
+      "left": 150,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r3",
+      "top": 40,
+      "left": 150,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r4",
+      "top": 90,
+      "left": 150,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r5",
+      "top": 140,
+      "left": 150,
+      "attrs": { "value": "220" }
+    }
+  ],
+  "connections": [
+    ["esp:TX", "$serialMonitor:RX", "", []],
+    ["esp:RX", "$serialMonitor:TX", "", []],
+
+    ["sw1:1", "esp:GND.1", "black", ["v0"]],
+    ["sw1:2", "esp:13", "green", ["v0"]],
+    ["sw2:1", "esp:GND.1", "black", ["v0"]],
+    ["sw2:2", "esp:12", "green", ["v0"]],
+    ["sw3:1", "esp:GND.1", "black", ["v0"]],
+    ["sw3:2", "esp:14", "green", ["v0"]],
+    ["sw4:1", "esp:GND.1", "black", ["v0"]],
+    ["sw4:2", "esp:27", "green", ["v0"]],
+    ["sw5:1", "esp:GND.1", "black", ["v0"]],
+    ["sw5:2", "esp:26", "green", ["v0"]],
+
+    ["esp:15", "light1:A", "green", ["v0"]],
+    ["light1:C", "r1:1", "black", ["v0"]],
+    ["r1:2", "esp:GND.2", "black", ["v0"]],
+
+    ["esp:2", "light2:A", "green", ["v0"]],
+    ["light2:C", "r2:1", "black", ["v0"]],
+    ["r2:2", "esp:GND.2", "black", ["v0"]],
+
+    ["esp:4", "light3:A", "green", ["v0"]],
+    ["light3:C", "r3:1", "black", ["v0"]],
+    ["r3:2", "esp:GND.2", "black", ["v0"]],
+
+    ["esp:16", "fan1:A", "blue", ["v0"]],
+    ["fan1:C", "r4:1", "black", ["v0"]],
+    ["r4:2", "esp:GND.2", "black", ["v0"]],
+
+    ["esp:17", "fan2:A", "blue", ["v0"]],
+    ["fan2:C", "r5:1", "black", ["v0"]],
+    ["r5:2", "esp:GND.2", "black", ["v0"]]
+  ]
+}
