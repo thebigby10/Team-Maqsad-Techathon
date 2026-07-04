@@ -71,7 +71,7 @@ def _device_to_read(device: Device) -> DeviceRead:
         id=device.id,
         name=device.name,
         pin=device.pin,
-        is_turned_off=device.is_turned_off,
+        is_running=device.is_running,
         power_usage=device.power_usage,
         room_number=device.room_number,
         last_usage_datetime=device.last_usage_datetime,
@@ -116,7 +116,7 @@ def create_device(
     device = Device(
         name=payload.name,
         pin=payload.pin,
-        is_turned_off=payload.is_turned_off,
+        is_running=payload.is_running,
         power_usage=payload.power_usage,
         room_number=payload.room_number,
     )
@@ -132,15 +132,20 @@ def toggle_device(
     identifier: str,
     session: Session = Depends(get_session),
 ) -> ToggleResponse:
-    """Toggle a device's on/off state and open or close a usage record.
+    """Flip a device's running state and open or close a usage record.
 
-    `is_turned_off` is the *event flag*: True means the device was just
-    turned OFF (so start a usage session); False means the device was
-    turned ON (so close the running session). After acting, the flag is
-    flipped so the next call does the opposite.
+    State model:
+    - `is_running == True`  -> device is currently ON. A usage row exists
+      with status="running".
+    - `is_running == False` -> device is currently OFF. Any prior session
+      has been closed (status="turned_off") with stop_datetime + total_cost.
 
-    - is_turned_off == True  -> open new session (status="running")
-    - is_turned_off == False -> close running session (status="turned_off")
+    Toggling flips the state:
+    - If new state is True  -> the device was just turned ON. Open a new
+      usage row (status="running", start_datetime=now).
+    - If new state is False -> the device was just turned OFF. Find the
+      running usage row, close it (status="turned_off", stop_datetime=now,
+      total_cost=...).
     """
     device = _resolve_device(session, identifier)
     if device is None:
@@ -152,13 +157,20 @@ def toggle_device(
     now = datetime.now(timezone.utc)
     device.last_usage_datetime = now
 
-    if device.is_turned_off:
-        # Device was just turned OFF -> start a usage session.
-        new_usage = Usage(device_id=device.id, start_datetime=now, status="running")
+    new_is_running = not device.is_running
+    device.is_running = new_is_running
+    session.add(device)
+
+    usage_id: Optional[int] = None
+    total_cost: Optional[float] = None
+    response_status: str
+
+    if new_is_running:
+        # Device turned ON -> open a new usage session.
+        new_usage = Usage(
+            device_id=device.id, start_datetime=now, status="running"
+        )
         session.add(new_usage)
-        # Flip the flag so the next toggle closes this session.
-        device.is_turned_off = False
-        session.add(device)
         session.commit()
         session.refresh(device)
         session.refresh(new_usage)
@@ -166,21 +178,18 @@ def toggle_device(
         return ToggleResponse(
             id=device.id,
             pin=device.pin,
-            is_turned_off=device.is_turned_off,
+            is_running=device.is_running,
             status="running",
             usage_id=new_usage.id,
             total_cost=None,
         )
 
-    # Device was just turned ON -> close the running session, compute cost.
+    # Device turned OFF -> close the running session, compute cost.
     running = session.exec(
         select(Usage).where(
             Usage.device_id == device.id, Usage.status == "running"
         )
     ).first()
-
-    usage_id: Optional[int] = None
-    total_cost: Optional[float] = None
 
     if running is not None:
         running.stop_datetime = now
@@ -192,16 +201,13 @@ def toggle_device(
         total_cost = running.total_cost
         session.add(running)
 
-    # Flip the flag so the next toggle opens a new session.
-    device.is_turned_off = True
-    session.add(device)
     session.commit()
     session.refresh(device)
 
     return ToggleResponse(
         id=device.id,
         pin=device.pin,
-        is_turned_off=device.is_turned_off,
+        is_running=device.is_running,
         status="turned_off",
         usage_id=usage_id,
         total_cost=total_cost,

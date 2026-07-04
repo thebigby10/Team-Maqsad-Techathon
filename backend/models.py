@@ -23,7 +23,7 @@ class Device(SQLModel, table=True):
     id: str = Field(default_factory=_new_uuid, primary_key=True, index=True)
     name: str = Field(index=True)
     pin: int = Field(unique=True, index=True)
-    is_turned_off: bool = Field(default=True)
+    is_running: bool = Field(default=False)
     power_usage: float = Field(gt=0)  # watts
     room_number: str = Field(index=True)
     last_usage_datetime: Optional[datetime] = Field(default=None)

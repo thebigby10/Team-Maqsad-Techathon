@@ -28,7 +28,7 @@ The registry of physical devices.
 | `id` | str (UUID4) | PK, server-generated |
 | `name` | str | Human label, indexed |
 | `pin` | int | GPIO pin, **unique**, indexed |
-| `is_turned_off` | bool | Event flag — see toggle semantics below |
+| `is_running` | bool | Current state — see toggle semantics below |
 | `power_usage` | float | Watts, must be > 0 |
 | `room_number` | str | Required, indexed |
 | `last_usage_datetime` | datetime? | Set to `now()` on every toggle |
@@ -57,16 +57,18 @@ Append-only log of on/off sessions.
 
 `{ID}` in `/toggle` and `/usage` accepts **either** the UUID **or** the pin number — `_resolve_device()` in `main.py` tries UUID lookup first, then falls back to pin.
 
-## Toggle semantics (the trickiest bit)
+## Toggle semantics
 
-`is_turned_off` is treated as an **event flag**, not a state:
+`is_running` is a straight **state boolean** — `True` means the device is currently ON, `False` means OFF. `/toggle/{ID}` flips it:
 
-| Current `is_turned_off` | Meaning | Action |
-|---|---|---|
-| `True` | Device was just turned OFF | Open a new `usage` row (`status="running"`, `start_datetime=now`), then flip flag to `False` |
-| `False` | Device was just turned ON | Close the running row (`stop_datetime=now`, `status="turned_off"`, compute cost), flip flag to `True` |
+| New `is_running` | Action |
+|---|---|
+| `True` (turned ON) | Open a new `usage` row: `status="running"`, `start_datetime=now` |
+| `False` (turned OFF) | Close the open `usage` row: `stop_datetime=now`, `status="turned_off"`, compute `total_cost` |
 
-So calling `/toggle/{ID}` repeatedly on the same device alternately opens and closes sessions — a real toggle. After every toggle, `device.last_usage_datetime` is bumped to `now()`.
+If the device is flipped OFF but no open `usage` row exists (e.g. registered with `is_running=true` and never started a session through the toggle), the close is a no-op: `usage_id=null`, `total_cost=null`. This makes the state flag and the `usage` table tolerant to desyncs.
+
+Every toggle also bumps `device.last_usage_datetime = now()`.
 
 ### Cost calculation
 On close: `total_cost = (power_usage / 1000) × hours_elapsed × RATE_PER_KWH`, rounded to 6 decimals. So a 60W bulb on for 1 hour costs `0.06 × 0.15 = $0.009`.
@@ -74,20 +76,17 @@ On close: `total_cost = (power_usage / 1000) × hours_elapsed × RATE_PER_KWH`, 
 ## Request flow (toggle example)
 
 ```
-POST /toggle/3
-  → _resolve_device("3") finds Device with pin=3
-  → reads is_turned_off=True → "device was just turned off"
+POST /toggle/3                         # device registered with is_running=false
+  → is_running flips: false -> true
   → creates Usage(start=now, status="running")
-  → sets device.is_turned_off=False, device.last_usage_datetime=now
-  → commit
-  → returns ToggleResponse(usage_id=1, status="running", total_cost=null)
+  → sets device.last_usage_datetime=now
+  → returns ToggleResponse(is_running=true, usage_id=1, status="running", total_cost=null)
 
-POST /toggle/3  (1 second later)
-  → reads is_turned_off=False → "device was just turned on"
+POST /toggle/3   (1 second later)
+  → is_running flips: true -> false
   → finds the running Usage row
-  → sets stop=now, status="turned_off", total_cost = 60W × 1s × 0.15/3600 ≈ 0.000003
-  → flips device.is_turned_off=True
-  → returns ToggleResponse(usage_id=1, status="turned_off", total_cost=3e-6)
+  → sets stop=now, status="turned_off", total_cost = 60W × 1s × 0.15/3600 ≈ 0.000009
+  → returns ToggleResponse(is_running=false, usage_id=1, status="turned_off", total_cost=9e-6)
 ```
 
 ## How to run
