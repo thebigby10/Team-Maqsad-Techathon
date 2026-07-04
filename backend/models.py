@@ -25,6 +25,8 @@ class Device(SQLModel, table=True):
     pin: int = Field(unique=True, index=True)
     is_turned_off: bool = Field(default=True)
     power_usage: float = Field(gt=0)  # watts
+    room_number: str = Field(index=True)
+    last_usage_datetime: Optional[datetime] = Field(default=None)
 
 
 class Usage(SQLModel, table=True):

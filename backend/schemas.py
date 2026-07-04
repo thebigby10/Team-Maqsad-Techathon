@@ -13,6 +13,7 @@ class DeviceCreate(BaseModel):
     pin: int = Field(..., ge=0)
     is_turned_off: bool = True
     power_usage: float = Field(..., gt=0, description="Power draw in watts")
+    room_number: str = Field(..., min_length=1)
 
 
 class DeviceRead(BaseModel):
@@ -21,6 +22,8 @@ class DeviceRead(BaseModel):
     pin: int
     is_turned_off: bool
     power_usage: float
+    room_number: str
+    last_usage_datetime: Optional[datetime] = None
 
 
 class EntryResponse(BaseModel):

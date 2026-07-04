@@ -5,7 +5,6 @@ from typing import Optional
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
 
 from config import RATE_PER_KWH
@@ -74,6 +73,8 @@ def _device_to_read(device: Device) -> DeviceRead:
         pin=device.pin,
         is_turned_off=device.is_turned_off,
         power_usage=device.power_usage,
+        room_number=device.room_number,
+        last_usage_datetime=device.last_usage_datetime,
     )
 
 
@@ -117,6 +118,7 @@ def create_device(
         pin=payload.pin,
         is_turned_off=payload.is_turned_off,
         power_usage=payload.power_usage,
+        room_number=payload.room_number,
     )
     session.add(device)
     session.commit()
@@ -148,6 +150,7 @@ def toggle_device(
         )
 
     now = datetime.now(timezone.utc)
+    device.last_usage_datetime = now
 
     if device.is_turned_off:
         # Device was just turned OFF -> start a usage session.
@@ -206,12 +209,13 @@ def toggle_device(
 
 
 @app.get("/devices")
-def list_devices(session: Session = Depends(get_session)) -> JSONResponse:
+def list_devices(session: Session = Depends(get_session)) -> dict:
     """List all registered devices with their current state."""
     devices = session.exec(select(Device)).all()
-    return JSONResponse(
-        content={"count": len(devices), "devices": [_device_to_read(d).model_dump() for d in devices]}
-    )
+    return {
+        "count": len(devices),
+        "devices": [_device_to_read(d).model_dump(mode="json") for d in devices],
+    }
 
 
 @app.get("/usage/{identifier}", response_model=UsageHistoryResponse)
