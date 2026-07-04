@@ -2,9 +2,7 @@
 
 import clsx from "clsx";
 import { motion } from "framer-motion";
-import { useTransition } from "react";
 import { toggleDevice } from "@/lib/api";
-import { useDashboard } from "@/lib/store";
 import type { DeviceRead } from "@/lib/types";
 
 interface DevicePillProps {
@@ -12,21 +10,15 @@ interface DevicePillProps {
 }
 
 export function DevicePill({ device }: DevicePillProps) {
-  const optimisticToggle = useDashboard((s) => s.optimisticToggle);
-  const rollbackToggle = useDashboard((s) => s.rollbackToggle);
-  const [pending, startTransition] = useTransition();
-
-  const onClick = () => {
-    // Snapshot + flip locally first for instant feedback.
-    optimisticToggle(device.id);
-    startTransition(async () => {
-      try {
-        await toggleDevice(device.id);
-        // SSE will reconcile within ~100ms; no further action needed.
-      } catch {
-        rollbackToggle();
-      }
-    });
+  const onClick = async () => {
+    try {
+      // Fire the toggle. The backend broadcasts the new state via SSE,
+      // which flows into the Zustand store and re-renders this pill —
+      // single source of truth, no speculative local mutation.
+      await toggleDevice(device.id);
+    } catch (err) {
+      console.error("Failed to toggle device:", err);
+    }
   };
 
   return (
@@ -37,13 +29,11 @@ export function DevicePill({ device }: DevicePillProps) {
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       aria-pressed={device.is_running}
       aria-label={`${device.name} — ${device.is_running ? "ON" : "OFF"}`}
-      disabled={pending}
       className={clsx(
         "group flex items-center justify-between gap-2 border border-black px-3 py-2 font-mono text-[11px] uppercase tracking-wider transition-colors",
         device.is_running
           ? "bg-emerald-400 text-black hover:bg-emerald-300"
           : "bg-white text-neutral-500 hover:bg-neutral-100",
-        pending && "opacity-70",
       )}
     >
       <span className="truncate">{formatName(device.name)}</span>

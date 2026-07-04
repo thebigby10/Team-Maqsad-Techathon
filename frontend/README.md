@@ -58,7 +58,9 @@ frontend/
 |---|---|---|
 | Live state of every device | `GET /devices/stream` | SSE — first message is the snapshot, then on every toggle/register |
 | Today's kWh / cost per device | `GET /usage/today/summary` | fetched on every SSE message so `open_session_started_at` is fresh |
-| Toggle a device | `POST /toggle/{id|pin}` | optimistic local flip + rollback on error; SSE reconciles within ms |
+| Toggle a device | `POST /toggle/{id|pin}` | fire-and-forget; SSE re-renders the pill within ~100 ms |
+
+Every API request carries a `Bypass-Tunnel-Reminder: true` header (set in `lib/api.ts`). This is harmless on direct localhost calls but required when `NEXT_PUBLIC_API_BASE` points at a localtunnel/ngrok URL — the tunnel serves a warning HTML page otherwise. Same pattern as the ESP32 sketch in `hardware/sketch.ino`.
 
 `lib/sse.ts` opens one `EventSource` per page load. The browser auto-reconnects on disconnect; `ConnectionBadge` surfaces state (`CONNECTING` / `LIVE` / `RECONNECTING`).
 

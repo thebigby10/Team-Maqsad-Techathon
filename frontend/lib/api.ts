@@ -13,6 +13,16 @@ import type {
 
 const DEFAULT_BASE = "http://localhost:8000";
 
+/**
+ * Header sent on every API request. Required when the backend is exposed
+ * via localtunnel/ngrok (the tunnel serves a warning HTML page otherwise);
+ * harmless on direct localhost calls (FastAPI just ignores it). Matches
+ * the pattern used by the ESP32 sketch in `hardware/sketch.ino`.
+ */
+const TUNNEL_BYPASS_HEADER = {
+  "Bypass-Tunnel-Reminder": "true",
+} as const;
+
 function apiBase(): string {
   const raw =
     process.env.NEXT_PUBLIC_API_BASE?.trim().replace(/\/+$/, "") ||
@@ -42,6 +52,7 @@ async function jsonFetch<T>(
       headers: {
         Accept: "application/json",
         ...(init?.body ? { "Content-Type": "application/json" } : {}),
+        ...TUNNEL_BYPASS_HEADER,
         ...(init?.headers ?? {}),
       },
     });
