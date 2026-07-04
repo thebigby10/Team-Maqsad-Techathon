@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ----------------------------------------------------------------------- */
+/* Base canvas — strict light-mode system monitor aesthetic.                */
+/* ----------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light only;
+}
+
+html,
+body {
+  height: 100%;
+  background: #ffffff;
+  color: #000000;
+}
+
+body {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Mono numbers must not jitter when digits change. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+/* Disable the default focus ring; we draw our own 1px focus borders. */
+:focus {
+  outline: none;
+}
+
+button,
+[role="button"] {
+  cursor: pointer;
+}
